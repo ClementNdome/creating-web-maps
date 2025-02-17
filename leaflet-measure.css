@@ -259,3 +259,55 @@
     opacity: .5;
     text-decoration: none
 }
+/* Custom button styles */
+.leaflet-control-measure a.start,
+.leaflet-control-measure a.cancel,
+.leaflet-control-measure a.finish {
+    background-color: #4CAF50; /* Green background */
+    color: white; /* White text */
+    padding: 10px 20px; /* Padding */
+    border-radius: 5px; /* Rounded corners */
+    text-align: center; /* Centered text */
+    text-decoration: none; /* Remove underline */
+    display: inline-block; /* Make buttons inline */
+    font-size: 16px; /* Increase font size */
+    margin: 4px 2px; /* Margin between buttons */
+    cursor: pointer; /* Pointer cursor on hover */
+    transition: background-color 0.3s ease; /* Smooth transition */
+}
+
+.leaflet-control-measure a.start:hover,
+.leaflet-control-measure a.cancel:hover,
+.leaflet-control-measure a.finish:hover {
+    background-color: #45a049; /* Darker green on hover */
+}
+
+/* Add icons to buttons */
+.leaflet-control-measure a.start::before {
+    content: "📏"; /* Ruler icon */
+    margin-right: 5px;
+}
+
+.leaflet-control-measure a.cancel::before {
+    content: "❌"; /* Cross icon */
+    margin-right: 5px;
+}
+
+.leaflet-control-measure a.finish::before {
+    content: "✅"; /* Checkmark icon */
+    margin-right: 5px;
+}
+
+/* Tooltip styling */
+.leaflet-control-measure a[title]:hover::after {
+    content: attr(title);
+    position: absolute;
+    background-color: #333;
+    color: #fff;
+    padding: 5px;
+    border-radius: 3px;
+    font-size: 12px;
+    white-space: nowrap;
+    z-index: 1000;
+    margin-top: 5px;
+}

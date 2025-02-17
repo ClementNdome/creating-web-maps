@@ -29,12 +29,14 @@
                 float: right;
             }
 
-            h1 {}
+            h1 {
+                color: blue;
+            }
         </style>
     </head>
 
     <body>
-        <h1 style="color: blue, ;">Web mapping </h1>
+        <h1>Web mapping</h1>
         <div id="map"></div>
 
         <!-- <h1>webbing</h1> -->

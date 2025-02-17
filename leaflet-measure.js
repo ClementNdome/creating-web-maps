@@ -2114,3 +2114,147 @@
       '<h3>Area measurement</h3> <p>{{ model.areaDisplay }}</p> <p>{{ model.lengthDisplay }} Perimeter</p> <ul class=tasks> <li><a href=# class="js-zoomto zoomto">Center on this area</a></li> <li><a href=# class="js-deletemarkup deletemarkup">Delete</a></li> </ul> ';
   },
 ]);
+function exportMeasurements(format) {
+  if (format === 'geojson') {
+      var geojson = {
+          type: 'FeatureCollection',
+          features: measurementHistory.map(function (measurement, index) {
+              return {
+                  type: 'Feature',
+                  properties: {
+                      id: index + 1,
+                      length: measurement.length,
+                      area: measurement.area
+                  },
+                  geometry: {
+                      type: 'Polygon',
+                      coordinates: [measurement.points.map(function (point) {
+                          return [point.lng, point.lat];
+                      })]
+                  }
+              };
+          })
+      };
+      var blob = new Blob([JSON.stringify(geojson)], { type: 'application/json' });
+      var link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = 'measurements.geojson';
+      link.click();
+  } else if (format === 'csv') {
+      var csv = 'ID,Length,Area\n';
+      measurementHistory.forEach(function (measurement, index) {
+          csv += `${index + 1},${measurement.length},${measurement.area}\n`;
+      });
+      var blob = new Blob([csv], { type: 'text/csv' });
+      var link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = 'measurements.csv';
+      link.click();
+  }
+}
+// Add undo/redo functionality
+var measurementHistory = [];
+var currentMeasurementIndex = -1;
+
+function saveMeasurement(measurement) {
+    measurementHistory.push(measurement);
+    currentMeasurementIndex = measurementHistory.length - 1;
+}
+
+function undoMeasurement() {
+    if (currentMeasurementIndex > 0) {
+        currentMeasurementIndex--;
+        restoreMeasurement(measurementHistory[currentMeasurementIndex]);
+    }
+}
+
+function redoMeasurement() {
+    if (currentMeasurementIndex < measurementHistory.length - 1) {
+        currentMeasurementIndex++;
+        restoreMeasurement(measurementHistory[currentMeasurementIndex]);
+    }
+}
+
+function restoreMeasurement(measurement) {
+    // Clear current measurement
+    this._clearMeasure();
+    
+    // Restore the measurement
+    this._latlngs = measurement.points;
+    this._updateResults();
+    this._updateMeasureStartedWithPoints();
+}
+
+// Modify the _finishMeasure function to save measurements
+L.Control.Measure.include({
+    _finishMeasure: function () {
+        var e = L.extend({}, this._resultsModel, { points: this._latlngs });
+        saveMeasurement(e); // Save the measurement to history
+        
+        // Rest of the original _finishMeasure code...
+    }
+});
+
+// Add buttons for undo/redo
+L.Control.Measure.include({
+    _initLayout: function () {
+        // Original code...
+
+        // Add undo/redo buttons
+        var undoButton = L.DomUtil.create('a', 'undo', this._container);
+        undoButton.href = '#';
+        undoButton.title = 'Undo';
+        undoButton.innerHTML = '⏪'; // Undo icon
+        L.DomEvent.on(undoButton, 'click', L.DomEvent.stop);
+        L.DomEvent.on(undoButton, 'click', this.undoMeasurement, this);
+
+        var redoButton = L.DomUtil.create('a', 'redo', this._container);
+        redoButton.href = '#';
+        redoButton.title = 'Redo';
+        redoButton.innerHTML = '⏩'; // Redo icon
+        L.DomEvent.on(redoButton, 'click', L.DomEvent.stop);
+        L.DomEvent.on(redoButton, 'click', this.redoMeasurement, this);
+    }
+});
+function updateMeasurementHistory() {
+  var historyList = document.getElementById('history-list');
+  historyList.innerHTML = ''; // Clear the list
+
+  measurementHistory.forEach(function (measurement, index) {
+      var listItem = document.createElement('li');
+      listItem.textContent = `Measurement ${index + 1}: ${measurement.lengthDisplay} (${measurement.areaDisplay})`;
+      historyList.appendChild(listItem);
+  });
+}
+
+// Call updateMeasurementHistory whenever a new measurement is saved
+function saveMeasurement(measurement) {
+  measurementHistory.push(measurement);
+  currentMeasurementIndex = measurementHistory.length - 1;
+  updateMeasurementHistory(); // Update the history panel
+}
+// Add export buttons
+L.Control.Measure.include({
+  _initLayout: function () {
+      // Original code...
+
+      // Add export buttons
+      var exportGeoJSONButton = L.DomUtil.create('a', 'export-geojson', this._container);
+      exportGeoJSONButton.href = '#';
+      exportGeoJSONButton.title = 'Export as GeoJSON';
+      exportGeoJSONButton.innerHTML = '📤 GeoJSON'; // Export icon
+      L.DomEvent.on(exportGeoJSONButton, 'click', L.DomEvent.stop);
+      L.DomEvent.on(exportGeoJSONButton, 'click', function () {
+          exportMeasurements('geojson');
+      }, this);
+
+      var exportCSVButton = L.DomUtil.create('a', 'export-csv', this._container);
+      exportCSVButton.href = '#';
+      exportCSVButton.title = 'Export as CSV';
+      exportCSVButton.innerHTML = '📤 CSV'; // Export icon
+      L.DomEvent.on(exportCSVButton, 'click', L.DomEvent.stop);
+      L.DomEvent.on(exportCSVButton, 'click', function () {
+          exportMeasurements('csv');
+      }, this);
+  }
+});
